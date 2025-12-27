@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Night Picker</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f0f2f5; text-align: center; }
+        .container { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        input { width: 70%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        button { padding: 12px; cursor: pointer; border-radius: 8px; border: none; font-weight: bold; transition: 0.2s; }
+        .add-btn { background: #28a745; color: white; }
+        .pick-btn { background: #007bff; color: white; width: 100%; margin-top: 20px; font-size: 18px; }
+        ul { list-style: none; padding: 0; text-align: left; margin-top: 20px; }
+        li { background: #eee; margin: 5px 0; padding: 10px; display: flex; justify-content: space-between; border-radius: 5px; }
+        .delete-btn { color: red; cursor: pointer; font-weight: bold; }
+        #result { margin-top: 20px; font-size: 24px; color: #d9534f; font-weight: bold; min-height: 30px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🎲 Board Game Picker</h2>
+    <input type="text" id="gameInput" placeholder="Enter game name...">
+    <button class="add-btn" onclick="addGame()">Add</button>
+
+    <div id="result"></div>
+    <button class="pick-btn" onclick="pickGame()">WHAT SHOULD WE PLAY?</button>
+
+    <ul id="gameList"></ul>
+</div>
+
+<script>
+    let games = JSON.parse(localStorage.getItem('myBoardGames')) || [];
+
+    function updateUI() {
+        const list = document.getElementById('gameList');
+        list.innerHTML = '';
+        games.forEach((game, index) => {
+            list.innerHTML += `<li>${game} <span class="delete-btn" onclick="removeGame(${index})">X</span></li>`;
+        });
+        localStorage.setItem('myBoardGames', JSON.stringify(games));
+    }
+
+    function addGame() {
+        const input = document.getElementById('gameInput');
+        if (input.value.trim() !== "") {
+            games.push(input.value);
+            input.value = "";
+            updateUI();
+        }
+    }
+
+    function removeGame(index) {
+        games.splice(index, 1);
+        updateUI();
+    }
+
+    function pickGame() {
+        const resultDiv = document.getElementById('result');
+        if (games.length === 0) {
+            resultDiv.innerText = "Add some games first!";
+            return;
+        }
+        
+        // Simple animation effect
+        resultDiv.innerText = "Choosing...";
+        setTimeout(() => {
+            const randomIndex = Math.floor(Math.random() * games.length);
+            resultDiv.innerText = "Let's play: " + games[randomIndex] + "!";
+        }, 500);
+    }
+
+    // Initialize list on load
+    updateUI();
+</script>
+
+</body>
+</html>
