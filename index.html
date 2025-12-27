@@ -10,12 +10,16 @@
         h2 { color: #333; margin-bottom: 20px; }
         
         .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        
+        /* Added transition for the error shake effect */
         input { flex-grow: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; transition: 0.3s; }
         input:focus { border-color: #007bff; }
         
+        /* New class for error state */
+        .input-error { border-color: #dc3545 !important; background-color: #fff8f8; }
+        
         button { padding: 12px 20px; cursor: pointer; border-radius: 8px; border: none; font-weight: bold; transition: 0.2s; font-size: 16px; }
         button:hover { opacity: 0.9; transform: scale(1.02); }
-        button:active { transform: scale(0.98); }
         
         .add-btn { background: #28a745; color: white; }
         .pick-btn { background: #007bff; color: white; width: 100%; margin-top: 10px; font-size: 18px; padding: 15px; box-shadow: 0 4px 0 #0056b3; }
@@ -29,6 +33,7 @@
 
         #result { margin: 20px 0; font-size: 26px; color: #333; font-weight: 800; min-height: 40px; display: flex; align-items: center; justify-content: center; }
         .winner { color: #28a745 !important; transform: scale(1.1); transition: 0.3s; }
+        .error-msg { color: #dc3545 !important; font-size: 18px !important; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -39,7 +44,7 @@
     <h2>🎲 Board Game Picker</h2>
     
     <div class="input-group">
-        <input type="text" id="gameInput" placeholder="Enter game name..." onkeypress="handleEnter(event)">
+        <input type="text" id="gameInput" placeholder="Enter game name..." onkeypress="handleEnter(event)" oninput="clearError()">
         <button class="add-btn" onclick="addGame()">Add</button>
     </div>
 
@@ -50,24 +55,20 @@
 </div>
 
 <script>
-    // 1. Safe State Management
     let games = JSON.parse(localStorage.getItem('myBoardGames')) || [];
 
-    // 2. Optimized UI Update (Security Fix)
     function updateUI() {
         const list = document.getElementById('gameList');
         list.innerHTML = '';
         
         games.forEach((game, index) => {
             const li = document.createElement('li');
-            
-            // Create text node safely
             const textSpan = document.createElement('span');
             textSpan.textContent = game;
             
             const deleteBtn = document.createElement('span');
             deleteBtn.className = 'delete-btn';
-            deleteBtn.innerHTML = '✕'; // Using a nice UTF-8 symbol
+            deleteBtn.innerHTML = '✕'; 
             deleteBtn.onclick = () => removeGame(index);
             
             li.appendChild(textSpan);
@@ -78,20 +79,44 @@
         localStorage.setItem('myBoardGames', JSON.stringify(games));
     }
 
-    // 3. Add Game Logic
     function addGame() {
         const input = document.getElementById('gameInput');
-        const value = input.value.trim();
+        const resultDiv = document.getElementById('result');
+        const rawValue = input.value.trim();
         
-        if (value) {
-            games.push(value);
-            input.value = "";
-            updateUI();
-            input.focus(); // Keep focus on input for rapid entry
+        // 1. Check if empty
+        if (!rawValue) return;
+
+        // 2. CHECK FOR DUPLICATES
+        // We compare lowercase versions so "Catan" matches "catan"
+        const isDuplicate = games.some(game => game.toLowerCase() === rawValue.toLowerCase());
+
+        if (isDuplicate) {
+            // Visual feedback for duplicate
+            resultDiv.innerText = `"${rawValue}" is already in the list!`;
+            resultDiv.className = "error-msg"; // Use CSS class for error styling
+            input.classList.add("input-error"); // Turn input red
+            return;
         }
+
+        // 3. Add game if safe
+        games.push(rawValue);
+        input.value = "";
+        
+        // Reset result text to neutral
+        resultDiv.innerText = "Added!";
+        resultDiv.className = ""; 
+        
+        updateUI();
+        input.focus();
     }
 
-    // 4. Handle "Enter" Key
+    // Clears the red error border when user starts typing again
+    function clearError() {
+        const input = document.getElementById('gameInput');
+        input.classList.remove("input-error");
+    }
+
     function handleEnter(event) {
         if (event.key === "Enter") {
             addGame();
@@ -103,14 +128,13 @@
         updateUI();
     }
 
-    // 5. The "Roulette" Animation Effect
     function pickGame() {
         const resultDiv = document.getElementById('result');
-        resultDiv.className = ''; // Reset styling
+        resultDiv.className = ''; 
         
         if (games.length === 0) {
             resultDiv.innerText = "Add some games first!";
-            resultDiv.style.color = "#dc3545";
+            resultDiv.classList.add("error-msg");
             return;
         }
         
@@ -120,10 +144,8 @@
             return;
         }
 
-        // Animation logic
         let counter = 0;
-        const cycles = 20; // How many flicks before stopping
-        const speed = 100; // Speed in ms
+        const cycles = 20; 
 
         const interval = setInterval(() => {
             const randomIndex = Math.floor(Math.random() * games.length);
@@ -132,7 +154,6 @@
 
             if (counter >= cycles) {
                 clearInterval(interval);
-                // Final winning pick (ensure it feels random)
                 const winnerIndex = Math.floor(Math.random() * games.length);
                 resultDiv.innerText = "Let's play: " + games[winnerIndex] + "!";
                 resultDiv.classList.add('winner');
@@ -140,7 +161,6 @@
         }, 80);
     }
 
-    // Initialize list on load
     updateUI();
 </script>
 
